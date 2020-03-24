@@ -11,3 +11,8 @@
 - See screen shots for insight on setting up your own implementation.
 - Implementation specific parameters are at the top of Code.gs.
 - Copy contents of Code.gs into Google Forms Script Editor.
+
+![](./img/ss_form.png)
+![](./img/ss_trigger_send_invitation.png)
+![](./img/ss_trigger_send_response.png)
+![](./img/ss_triggers.png)
