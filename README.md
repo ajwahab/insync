@@ -13,6 +13,6 @@
 - Copy contents of Code.gs into Google Forms Script Editor.
 
 ![](./img/ss_form.png)
+![](./img/ss_triggers.png)
 ![](./img/ss_trigger_send_invitation.png)
 ![](./img/ss_trigger_send_response.png)
-![](./img/ss_triggers.png)
