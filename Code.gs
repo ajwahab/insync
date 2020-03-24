@@ -5,7 +5,7 @@
 // -- sending results
 var ssId = "<spreadsheet_id>";
 var sheetName = "Form Responses 1";
-var email_recipients = ["jawn.dough@grumblespot.biz", "rick.oshea@grumblspot.biz", "smirk.mcgillicuddy@grumbspot.biz"];
+var email_recipients = ["jawn.dough@grumblespot.biz", "rick.oshea@grumblespot.biz", "smirk.mcgillicuddy@grumblespot.biz"];
 var form_url = "https://forms.gle/<form_id>";
 var at_domain = "@grumblespot.biz";
 
