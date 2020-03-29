@@ -1,5 +1,5 @@
 # GrumbleSpot
-(aka thePoint) A free alternative to paid services like Humble Dot that is based on Google Forms and powered by Apps Scripts.
+(aka thePoint) A free alternative to paid manager-team sync services (e.g., Humble Dot) powered by Google Forms, Sheets, and Gmail.
 
 - Time scheduled invitations for form-based updates are sent out to team members.
 - Time scheduled summary of team members' updates is sent out to team members.
