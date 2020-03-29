@@ -1,21 +1,22 @@
-// - run form/script from GrumbleSpot account
-// - replyto address will be list of email recipients
-// - project has triggers for:
-// -- sending weekly invitation
+// - run form/script from appropriate G Suite account
+// - replyto address will be list of team email address (mechanism for group repsponses)
+// - Project properties (File --> Project properties --> Script properties) contains:
+// -- ss_id (ID of Google Sheets spreadsheet associated with form)
+// -- email_recipients (comma separated list of email addresses)
+// -- form_url (URL of Google Form)
+// - project has weekly triggers for:
+// -- sending invitation
 // -- sending results
-var ssId = "<spreadsheet_id>";
-var sheetName = "Form Responses 1";
-var email_recipients = ["jawn.dough@grumblespot.biz", "rick.oshea@grumblespot.biz", "smirk.mcgillicuddy@grumblespot.biz"];
-var form_url = "https://forms.gle/<form_id>";
-var at_domain = "@grumblespot.biz";
 
 function send_invitation(e) {
-  Logger.log("[METHOD] send_invitation");
+  Logger.log("send_invitation");
   MailApp.sendEmail({
-    to: email_recipients.join(','),
-    replyto: email_recipients.join(','),
+    to: PropertiesService.getScriptProperties().getProperty('email_recipients'),
+    replyto: PropertiesService.getScriptProperties().getProperty('email_recipients'),
     subject: "[BETA] Invitation to post update for " + tstamp_mmddyyyy(),
-    htmlBody: "Get to <a href=" + form_url + ">thePoint</a> before 3:00 PM."
+    htmlBody: "Get to <a href=\
+              " + PropertiesService.getScriptProperties().getProperty('form_url') + "\
+              >thePoint</a> before 3:00 PM."
   });
 }
 
@@ -32,13 +33,11 @@ function tstamp_mmddyyyy(tstamp) {
   return Utilities.formatDate(tstamp, "GMT-4", "MM.dd.yyyy");
 }
 
-function send_results(range) {
-  Logger.log("[METHOD] send_results");
-  if (range == null) {
-    var ss = SpreadsheetApp.openById(ssId);
-    var sheet = ss.getSheets()[0];
-    range = sheet.getDataRange();
-  }
+function send_results(e) {
+  Logger.log("send_results");
+  var ss = SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty('ss_id'));
+  var sheet = ss.getSheets()[0];
+  var range = sheet.getDataRange();
   var values = range.getValues();
   var entries = []
   var quests = [];
@@ -56,7 +55,7 @@ function send_results(range) {
         resps.push(values[ent][rsp])
       }
       entries.push({timestamp: values[ent][0],
-                    user: (values[ent][1]).replace(at_domain, ''),
+                    user_email: (values[ent][1]),
                     questions: quests,
                     responses: resps,
                     highlights: values[ent][2],
@@ -66,11 +65,11 @@ function send_results(range) {
       break;
   }
   if (entries.length) {
-    // combine multiple entries from a single user, if they exist
     // \todo replace nested loops with clever JS voodoo
-    // \todo fix this, it only works for first question
     var entries1 = [];
-    entries1 = JSON.parse(JSON.stringify(entries)) // deep copy
+    // \todo combine multiple entries from a single user, if they exist
+    //       until then, just deep copy
+    entries1 = JSON.parse(JSON.stringify(entries));
     // consolidate responses from all users for each question
     // [{question: null, user_resp: [{user: null, response: null}]}]
     // \todo replace nested loops with clever JS voodoo or directly pull columns from spreadsheet
@@ -78,10 +77,11 @@ function send_results(range) {
     for (var q = 0; q < quests.length; q++) {
       var ur = [];
       for (var e = 0; e < entries1.length; e++) {
-        ur.push({user: entries1[e].user, response: entries1[e].responses[q]});
+        ur.push({user_email: entries1[e].user_email, response: entries1[e].responses[q]});
       }
       entries2.push({question: quests[q], user_resp: ur});
     }
+    // HTML format:
     // question0:
     //   user0:
     //     response
@@ -95,11 +95,12 @@ function send_results(range) {
       var str_q = "<h3>" + entries2[e].question + "</h3>";
       var str_ur = '';
       for (var u = 0; u < entries2[e].user_resp.length; u++) {
-        var user = entries2[e].user_resp[u].user;
+        var usr_eml = entries2[e].user_resp[u].user_email;
+        var usr = usr_eml.split('@', 1);
         var sbj = entries2[e].question + " " + tstamp_mmddyyyy();
         var bdy = encodeURI('\n........\n' + entries2[e].user_resp[u].response);
-        var str_u = "<a href=\"mailto:" + user + at_domain + "?subject=" + sbj + "&body=\
-                    " + bdy + "\" target=\"_top\">" + user + "</a>";
+        var str_u = "<a href=\"mailto:" + usr_eml + "?subject=" + sbj + "&body=\
+                    " + bdy + "\" target=\"_top\">" + usr + "</a>";
         var str_r = "<p style=\"margin-left: 40px\">\
                     " + entries2[e].user_resp[u].response.replace(/(?:\r\n|\r|\n)/g, '<br>') + "</p>";
         str_ur += str_u + str_r;
@@ -107,8 +108,8 @@ function send_results(range) {
       email_body += str_q + str_ur;
     }
     MailApp.sendEmail({
-      to: email_recipients.join(','),
-      replyto: email_recipients.join(','),
+      to: PropertiesService.getScriptProperties().getProperty('email_recipients'),
+      replyto: PropertiesService.getScriptProperties().getProperty('email_recipients'),
       subject: "[BETA] Update for " + tstamp_mmddyyyy(),
       htmlBody: email_body
     });
