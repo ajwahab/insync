@@ -4,9 +4,10 @@
 - Time scheduled invitations for form-based updates are sent out to team members.
 - Time scheduled summary of team members' updates is sent out to team members.
 - Summary includes convenient links for sending feedback to individual team members about specific items.
-- No need to log in to third party services if your team already uses GSuite.
+- No need to log in to third party services if your team already uses G Suite.
 - Data is stored in Google Sheets, so if you trust GSuite, then there is no need to worry about the security of sensitive project data being stored on third-party servers.
 - Flexible and extensible Apps Script (JavaScript) back-end (Script Editor may be accessed from Google Forms).
+- Can be extended to include zany wildcard questions, if you're into that.
 - Free, so no monthly fee per user for a simple service.
 - See screen shots for insight on setting up your own implementation.
 - Implementation specific parameters are at the top of Code.gs.
