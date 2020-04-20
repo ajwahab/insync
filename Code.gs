@@ -13,7 +13,7 @@ function send_results(event) {
   var entries = get_form_responses();
   if (entries.length) {
     record_entries(entries);
-    var results = parse_results(entries);
+    var results = structure_results(entries);
     var email_body = prepare_results_email(results);
     results_sender(email_body);
   }
@@ -25,14 +25,10 @@ function send_results(event) {
 function prepare_form(day) {
   var form = form_initializer(get_id('form_id'));
   var static_questions = get_static_questions(day);
-  static_questions.forEach(function(q) {
-    form_add_question(form, q[0], q[1]);
-  });
+  static_questions.forEach(q => form_add_question(form, q[0], q[1]));
   //pull one-off questions from the "add question" form
   var dynamic_questions = get_dynamic_questions(day);
-  dynamic_questions.forEach(function(q) {
-    form_add_question(form, q[0], q[1]);
-  });
+  dynamic_questions.forEach(q => form_add_question(form, q[0], q[1]));
   return form;
 }
 
@@ -91,7 +87,7 @@ function get_static_questions(today) {
   var rqd_col = rows[0].indexOf('response_required'); //get index of column titled 'response_required'
   var day_col = rows[0].indexOf('day'); //get index of column titled 'day'
   var todays_quests = [];
-  rows.forEach(function(row) {
+  rows.forEach(row => {
     if (row[day_col] == today) {
       //normalize 'response_required' entry to a proper boolean...
       if (['true', 'y', 'yes', '1', 'required'].includes(String(row[rqd_col]).toLowerCase()))
@@ -107,15 +103,15 @@ function get_static_questions(today) {
 function get_dynamic_questions(today) {
   var form_id = get_id('add_quest_form_id');
   var form = FormApp.openById(form_id);
-  var formResponses = form.getResponses();
+  var form_responses = form.getResponses();
   var todays_quests = [];
-  formResponses.filter(function(formResponse) {
-    var tstamp = (new Date(formResponse.getTimestamp())).getTime();
+  form_responses.forEach(form_response => {
+    var tstamp = (new Date(form_response.getTimestamp())).getTime();
     if (delta_days(tstamp) < 7) {
-      var itemResponses = formResponse.getItemResponses();
-      var question = itemResponses[0].getResponse();
-      var reqd = itemResponses[1].getResponse();
-      var day = itemResponses[2].getResponse();
+      var item_responses = form_response.getItemResponses();
+      var question = item_responses[0].getResponse();
+      var reqd = item_responses[1].getResponse();
+      var day = item_responses[2].getResponse();
       if (day == today) {
         //normalize 'response_required' entry to proper boolean value...
         if(['true', 'y', 'yes', '1', 'required'].includes(String(reqd).toLowerCase()))
@@ -123,7 +119,6 @@ function get_dynamic_questions(today) {
         else
           reqd = false;
         todays_quests.push([question, reqd]);
-        return [question, reqd];
       }
     }
   });
@@ -134,7 +129,7 @@ function get_email_addresses() {
   var sheet = SpreadsheetApp.openById(get_registry_ss_id()).getSheetByName('email');
   var rows = sheet.getDataRange().getValues();
   var team_col = rows[0].indexOf('team_email_addresses');
-  var email_addresses = rows.map(function(value, index) { return value[team_col]; });
+  var email_addresses = rows.map(value => value[team_col]);
   email_addresses.shift(); //remove header row
   return email_addresses;
 }
@@ -186,73 +181,60 @@ function prepare_results_email(results) {
 
 function get_id(id_label) {
   var registry_ids = SpreadsheetApp.openById(get_registry_ss_id())
-                                .getSheetByName('ids')
-                                .getDataRange()
-                                .getValues();
-  var id_entry = registry_ids.filter(function(row) {
-    if (row[0] == id_label)
-      return row;
-  });
-  return id_entry[0][1]
+                                   .getSheetByName('ids')
+                                   .getDataRange()
+                                   .getValues();
+  var id_entry = registry_ids.filter(row => row[0] == id_label)[0];
+  return id_entry[1];
 }
 
 function set_id(id_label, id) {
   var sheet = SpreadsheetApp.openById(get_registry_ss_id()).getSheetByName('ids');
   var registry_ids = sheet.getDataRange().getValues();
-  registry_ids.forEach(function(row, index) {
-    if (row[0] == id_label)
-      SpreadsheetApp.getActiveSheet().getRange(index, 1).setValue(id);
-  });
+  registry_ids.filter(row => row[0] == id_label)
+              .forEach((row, index) => SpreadsheetApp.getActiveSheet().getRange(index, 1).setValue(id));
 }
 
 function get_form_responses() {
-  var form_id = get_id('form_id');
-  var form = FormApp.openById(form_id);
-  var formResponses = form.getResponses();
+  var form_responses = FormApp.openById(get_id('form_id')).getResponses();
   var entries = [];
-  for (var i = 0; i < formResponses.length; i++) {
-    var formResponse = formResponses[i];
-    var itemResponses = formResponse.getItemResponses();
-    var quests = [];
-    var resps = [];
-    for (var j = 0; j < itemResponses.length; j++) {
-      var itemResponse = itemResponses[j];
-      quests.push(itemResponse.getItem().getTitle());
-      resps.push(itemResponse.getResponse());
-    }
-    entries.push({timestamp: formResponse.getTimestamp(),
-                  user_email: formResponse.getRespondentEmail(),
+  form_responses.forEach(form_response => {
+    let item_responses = form_response.getItemResponses();
+    let quests = [];
+    let resps = [];
+    item_responses.forEach(item_response => {
+      quests.push(item_response.getItem().getTitle());
+      resps.push(item_response.getResponse());
+    });
+    entries.push({timestamp: form_response.getTimestamp(),
+                  user_email: form_response.getRespondentEmail(),
                   questions: quests,
                   responses: resps});
-  }
+  });
   return entries;
 }
 
-function parse_results(entries) {
-  // \todo replace nested loops with clever JS voodoo
+function structure_results(entries) {
   // consolidate responses from all users for each question
   // [{question: null, user_resp: [{user: null, response: null}]}]
   var results = [];
-  for (var q = 0; q < entries[0].questions.length; q++) {
-    var ur = [];
-    for (var e = 0; e < entries.length; e++) {
-      if (entries[e].responses[q].length > 0)
-        ur.push({user_email: entries[e].user_email, response: entries[e].responses[q]});
-    }
-    results.push({question: entries[0].questions[q], user_resp: ur});
-  }
+  entries[0].questions.forEach((question, q_index) => {
+    let ur = [];
+    // filter out empty responses
+    entries.filter(entry => entry.responses[q_index].length > 0)
+           .forEach(entry => ur.push({user_email: entry.user_email,
+                                      response: entry.responses[q_index]}));
+    results.push({question: question, user_resp: ur});
+  });
   return results;
 }
 
 function record_entries(entries) {
-  var ss = SpreadsheetApp.openById(get_registry_ss_id());
-  var sheet = ss.getSheetByName('record');
+  var sheet = SpreadsheetApp.openById(get_registry_ss_id()).getSheetByName('record');
   //write questions
   sheet.appendRow(['-','-'].concat(entries[0].questions));
   //write responses
-  entries.forEach(function(entry) {
-    sheet.appendRow([entry.timestamp, entry.user_email].concat(entry.responses));
-  });
+  entries.forEach(entry => sheet.appendRow([entry.timestamp, entry.user_email].concat(entry.responses)));
 }
 
 function results_sender(email_body) {
@@ -263,7 +245,7 @@ function results_sender(email_body) {
     subject: '[InSync] Update ' + tstamp_mmddyyyy(),
     htmlBody: email_body
   });
-  Logger.log('Results sent.');
+  Logger.log('results sent.');
 }
 
 function set_trigger(today, trig_day, trig_hour, handler) {
