@@ -37,6 +37,7 @@ Refer to the screen shots for insight regarding setting up your own implementati
 1. Create a [Google Script](script.google.com) project.
   1. Copy contents of Code.gs into the Script Editor.
   1. Set File → Project properties → Script properties.
+    - Create a new property as shown in the image below and assign it the unique ID of the registry spreadsheet as its value.
      ![](./img/ss_script_props.png)
   1. Edit → Project triggers and create a time trigger for either a Monday or Friday morning invitation to fill the update form.
     - From this point on, the script will perpetually delete and create triggers as needed.
