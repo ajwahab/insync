@@ -44,7 +44,10 @@ function form_initializer(form_id) {
     //update form_id in registry
     set_id('form_id', form.getId());
   } finally {
-    form.setDescription('Say bye bye bye to meetings.\n\nUse Markdown to format your responses: *italics*, **bold**, - list, [link](url).');
+    var description = 'Say bye bye bye to meetings.';
+    if (typeof nmd === 'function')
+      description += '\n\nUse Markdown to format your responses: *italics*, **bold**, - list, [link](url).';
+    form.setDescription(description);
     form.setRequireLogin(true);
     form.setCollectEmail(true);
     form.setAllowResponseEdits(true);
