@@ -44,7 +44,6 @@ function form_initializer(form_id) {
     //update form_id in registry
     set_id('form_id', form.getId());
   } finally {
-
     var description = 'Say bye bye bye to meetings.';
     if (typeof nmd === 'function')
       description += '\n\nUse Markdown to format your responses: *italics*, **bold**, - list, [link](url).';
@@ -302,6 +301,33 @@ function bootstrap() {
              .appendRow(['form_id'])
              .appendRow(['add_quest_form_id'])
              .setFrozenRows(1);
+
+  //create form to add questions
+  var form = FormApp.create('insync_add_question');
+  //update form_id in registry
+  set_id('add_quest_form_id', form.getId());
+  form.setTitle('Insync - add a question')
+      .setDescription('Add a one-off question to an upcoming update.')
+      .setRequireLogin(true)
+      .setCollectEmail(true)
+      .setAllowResponseEdits(true);
+  var item = form.addParagraphTextItem()
+      .setTitle('Enter the question:')
+      .setRequired(true);
+  item = form.addMultipleChoiceItem();
+  item.setTitle('Responses are to be:')
+      .setChoices([
+          item.createChoice('Required'),
+          item.createChoice('Not required')
+       ])
+      .setRequired(true);
+  item = form.addMultipleChoiceItem();
+  item.setTitle('The question will be included on:')
+      .setChoices([
+          item.createChoice('Monday'),
+          item.createChoice('Friday')
+       ])
+      .setRequired(true);
 }
 
 function nmd(md) {
