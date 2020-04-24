@@ -39,12 +39,12 @@ function form_initializer(form_id) {
     clear_form(form);
   } catch(err) {
     Logger.log(err);
-    Logger.log('creating new form.');
+    Logger.log('creating new form');
     form = FormApp.create('InSync');
     //update form_id in registry
     set_id('form_id', form.getId());
   } finally {
-    form.setDescription('Say bye bye bye to meetings.');
+    form.setDescription('Say bye bye bye to meetings.\n\nUse Markdown to format your responses: *italics*, **bold**, - list, [link](url).');
     form.setRequireLogin(true);
     form.setCollectEmail(true);
     form.setAllowResponseEdits(true);
@@ -160,23 +160,29 @@ function invitation_sender(form_url) {
 function prepare_results_email(results) {
   var email_body = 'Click on a user.name to send feedback to an individual.<br>';
   email_body += 'Replying to this message will address the entire team.<br>';
-  for (var e = 0; e < results.length; e++) {
-    var str_q = '<h3>' + results[e].question + '</h3>';
+  if (typeof nmd === 'function')
+    Logger.log('nmd parser defined');
+  else {
+    Logger.log('nmd parser undefined');
+    nmd = (txt) => {return txt};
+  }
+  results.forEach(result => {
+    var str_q = '<h3>' + result.question + '</h3>';
     var str_ur = '';
-    for (var u = 0; u < results[e].user_resp.length; u++) {
-      var user_email = results[e].user_resp[u].user_email;
+    result.user_resp.forEach(user_resp => {
+      var user_email = user_resp.user_email;
       var user = user_email.split('@', 1);
-      var sbj = results[e].question + ' ' + tstamp_mmddyyyy();
-      var bdy = encodeURI('\r\n........\r\n' + results[e].user_resp[u].response);
+      var sbj = result.question + ' ' + tstamp_mmddyyyy();
+      var bdy = encodeURI('\r\n---\r\n' + user_resp.response);
       var str_u = '<a href=\"mailto:' + user_email + '?subject=' + sbj + '&body=\
                   ' + bdy + '\" target=\"_top\">' + user + '</a>';
-      var str_r = '<p style=\"margin-left: 40px\">\
-                  ' + results[e].user_resp[u].response.replace(/(?:\r\n|\r|\n)/g, '<br>') + '</p>';
+      user_resp.response = nmd(user_resp.response).replace(/(?:\r\n|\r|\n)/g, '<br>');
+      var str_r = user_resp.response.replace('<p>', '<p style=\"margin-left: 20px\">');
       str_ur += str_u + str_r;
-    }
+    });
     email_body += str_q + str_ur;
-  }
-  return(email_body);
+  });
+  return email_body;
 }
 
 function get_id(id_label) {
@@ -264,4 +270,31 @@ function clear_triggers() {
   var triggers = ScriptApp.getProjectTriggers();
   for (var i = 0; i < triggers.length; i++)
     ScriptApp.deleteTrigger(triggers[i]);
+}
+
+function bootstrap() {
+  //create a new registry and set script property to point to it
+  var registry_ss = SpreadsheetApp.create('insync_registry');
+  script_properties = PropertiesService.getScriptProperties();
+  script_properties.setProperty('prop_registry_ss_id', registry_ss.getId());
+
+  registry_ss.getSheets()[0].setName('record');
+
+  registry_ss.insertSheet('static_questions')
+             .appendRow(['question', 'response_required', 'day'])
+             .appendRow(['Priorities for this week:', 'yes', 'Monday'])
+             .appendRow(['Other thoughts:', 'no', 'Monday'])
+             .appendRow(['Highlights from this week:', 'yes', 'Friday'])
+             .appendRow(['Other thoughts:', 'no', 'Friday'])
+             .setFrozenRows(1);
+
+  registry_ss.insertSheet('email')
+             .appendRow(['team_email_addresses', 'limited_email_addresses'])
+             .setFrozenRows(1);
+
+  registry_ss.insertSheet('ids')
+             .appendRow(['label', 'id'])
+             .appendRow(['form_id'])
+             .appendRow(['add_quest_form_id'])
+             .setFrozenRows(1);
 }
