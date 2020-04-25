@@ -21,11 +21,13 @@
 ## Set-up
 1. Create a [Google Script](script.google.com) project.  
    1. Copy the contents of *Code.gs* into the script editor.  
-   1. Run the ``bootstrap`` function to generate a new registry, link it to the script via the script properties, and create a form to add one-off questions.
-      1. Set up the registry; this will store configuration parameters including email addresses, questions that will be asked during every update, and a record of past questions and responses.  
-         1. Open the new registry (*insync_registry*) in [Google Sheets](sheets.google.com).  
-         1. Navigate to the *email* sheet and add user email addresses to the column labeled *team_email_addresses*.  
-   1. Back in the script editor, navigate to Edit → Current project's triggers. Create a time trigger for either a Monday or Friday morning invitation to fill the update form.  From this point on, the script will perpetually delete and create triggers as needed. 
-1. Share the form to add one-off questions by opening *insync_add_question* in [Google Forms](forms.google.com) and sending to those who should have the ability to add questions. ![](./img/ss_form_add_question.png)   
-
-
+   1. Run → Run function → ``bootstrap`` to automatically:
+      - Generate the registry spreadsheet. This will store configuration parameters, email address, questions that will be asked in every update, and a running record of past questions and responses.
+      - Link the registry to the script via the script properties
+      - Set up a trigger to send the first invitation on Monday/Friday morning (whichever is sooner).  Subsequenty triggers are automatically configured by the script to maintain the following cadence: Monday AM invitation → Monday PM summary → Friday AM invitation → Friday PM summary → Monday AM invitation → ...
+      - Create a form that can be used to add one-off questions to upcoming updates
+   1. Finish setting up the registry.
+      1. Open the registry (*insync_registry*) in [Google Sheets](sheets.google.com).  
+      1. Navigate to the *email* sheet and add user email addresses to the column labeled *team_email_addresses*.  
+1. Share the form to add one-off questions by opening *insync_add_question* in [Google Forms](forms.google.com) and sending it to those who should have the ability to add questions.
+![](./img/ss_form_add_question.png)  

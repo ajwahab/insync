@@ -81,7 +81,7 @@ function delta_days(tstamp_ms0, tstamp_ms1) {
 }
 
 function get_registry_ss_id() {
-    return PropertiesService.getScriptProperties().getProperty('prop_registry_ss_id');
+    return PropertiesService.getScriptProperties().getProperty('PROP_REGISTRY_SS_ID');
 }
 
 function get_static_questions(today) {
@@ -242,7 +242,7 @@ function structure_results(entries) {
 function record_entries(entries) {
   var sheet = SpreadsheetApp.openById(get_registry_ss_id()).getSheetByName('record');
   //write questions
-  sheet.appendRow(['-','-'].concat(entries[0].questions));
+  sheet.appendRow([new Date((new Date()).toDateString() + ' 7:00'), 'insync'].concat(entries[0].questions));
   //write responses
   entries.forEach(entry => sheet.appendRow([entry.timestamp, entry.user_email].concat(entry.responses)));
 }
@@ -280,7 +280,7 @@ function bootstrap() {
   //create a new registry and set script property to point to it
   var registry_ss = SpreadsheetApp.create('insync_registry');
   script_properties = PropertiesService.getScriptProperties();
-  script_properties.setProperty('prop_registry_ss_id', registry_ss.getId());
+  script_properties.setProperty('PROP_REGISTRY_SS_ID', registry_ss.getId());
 
   registry_ss.getSheets()[0].setName('record');
 
@@ -301,6 +301,10 @@ function bootstrap() {
              .appendRow(['form_id'])
              .appendRow(['add_quest_form_id'])
              .setFrozenRows(1);
+  //set time trigger to send invite
+  var d = (new Date()).getDay();
+  var next_trig_day = (d > 1 && d < 5) ? ScriptApp.WeekDay.FRIDAY : ScriptApp.WeekDay.MONDAY;
+  set_trigger(get_day_of_week(), next_trig_day, 7, 'send_invitation');
 
   //create form to add questions
   var form = FormApp.create('insync_add_question');
